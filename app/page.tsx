@@ -2,10 +2,30 @@
 
 import { useState } from "react";
 
+interface NameSuggestion {
+  name: string;
+  pinyin: string;
+  meanings: {
+    individual: string[];
+    combined: string;
+  };
+  cultural: string;
+  personality: string;
+  english: string;
+}
+
+interface GenerateResponse {
+  choices: [{
+    message: {
+      content: string;
+    }
+  }]
+}
+
 export default function Home() {
   const [englishName, setEnglishName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState(null);
+  const [suggestions, setSuggestions] = useState<NameSuggestion[]>([]);
   const [error, setError] = useState('');
 
   const generateNames = async () => {
@@ -16,6 +36,7 @@ export default function Home() {
 
     setLoading(true);
     setError('');
+    setSuggestions([]);
     
     try {
       const response = await fetch('/api/generate', {
@@ -26,12 +47,25 @@ export default function Home() {
         body: JSON.stringify({ englishName }),
       });
 
-      const data = await response.json();
-      setResults(data);
+      const data: GenerateResponse = await response.json();
+      
+      // Parse the LLM response into structured data
+      try {
+        const parsedContent = JSON.parse(data.choices[0].message.content);
+        setSuggestions(parsedContent);
+      } catch (parseError) {
+        setError('Failed to parse the generated names. Please try again.');
+      }
     } catch (err) {
       setError('Failed to generate names. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !loading) {
+      generateNames();
     }
   };
 
@@ -53,6 +87,7 @@ export default function Home() {
               type="text"
               value={englishName}
               onChange={(e) => setEnglishName(e.target.value)}
+              onKeyPress={handleKeyPress}
               placeholder="Enter your English name"
               className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             />
@@ -69,13 +104,78 @@ export default function Home() {
           )}
         </div>
 
-        {results && (
+        {suggestions.length > 0 && (
           <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6">
-              <pre className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">
-                {JSON.stringify(results, null, 2)}
-              </pre>
-            </div>
+            {suggestions.map((suggestion, index) => (
+              <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                        {suggestion.name}
+                      </h2>
+                      <p className="text-lg text-gray-600 dark:text-gray-400">
+                        {suggestion.pinyin}
+                      </p>
+                    </div>
+                    <span className="text-2xl text-gray-400 dark:text-gray-600">
+                      #{index + 1}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      Character Meanings
+                    </h3>
+                    <div className="space-y-1">
+                      {suggestion.meanings.individual.map((meaning, i) => (
+                        <p key={i} className="text-gray-800 dark:text-gray-200">
+                          {meaning}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      Combined Meaning
+                    </h3>
+                    <p className="text-gray-800 dark:text-gray-200">
+                      {suggestion.meanings.combined}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      Cultural Significance
+                    </h3>
+                    <p className="text-gray-800 dark:text-gray-200">
+                      {suggestion.cultural}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      Personality Traits
+                    </h3>
+                    <p className="text-gray-800 dark:text-gray-200">
+                      {suggestion.personality}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      English Explanation
+                    </h3>
+                    <p className="text-gray-800 dark:text-gray-200">
+                      {suggestion.english}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

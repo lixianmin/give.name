@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 
 export async function POST(req: Request) {
   try {
@@ -17,22 +16,27 @@ export async function POST(req: Request) {
         messages: [
           {
             role: "user",
-            content: `Please generate 3 Chinese names based on the English name "${englishName}". 
-            Follow these rules:
-            1. Names should sound similar to the English pronunciation
-            2. Each character should have positive meanings
-            3. Follow traditional Chinese naming conventions
-            4. For each name provide:
-               - Pinyin
-               - Character meanings
-               - Cultural significance
-               - Personality traits
-               - English explanation
-            Format the response in JSON.`
+            content: `Generate 3 Chinese names based on the English name "${englishName}". 
+            Return the result in the following JSON format:
+            [
+              {
+                "name": "中文名",
+                "pinyin": "Zhong Wen Ming",
+                "meanings": {
+                  "individual": ["第一个字的含义", "第二个字的含义", "第三个字的含义"],
+                  "combined": "整体含义"
+                },
+                "cultural": "文化内涵",
+                "personality": "性格特征",
+                "english": "English explanation"
+              }
+            ]
+            Make sure each name is meaningful, elegant, and phonetically similar to "${englishName}".
+            Ensure each explanation is concise but informative.`
           }
         ],
         stream: false,
-        max_tokens: 512,
+        max_tokens: 1024,
         temperature: 0.7,
         top_p: 0.7,
         top_k: 50,
