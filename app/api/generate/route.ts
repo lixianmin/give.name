@@ -13,7 +13,7 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "Qwen/QVQ-72B-Preview",
+        model: "Qwen/Qwen2.5-7B-Instruct",
         messages: [
           {
             role: "user",
